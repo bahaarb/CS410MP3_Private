@@ -48,19 +48,22 @@ class Corpus(object):
         # #############################
         # your code here
         # #############################
-        #file = open(self.documents_path)
-        #read = file.readlines() 
-        #myList = []
-        #for line in read:
-        #    myList = line.split()
-        #    self.documents.append(myList)
+        file = open(self.documents_path)
+        read = file.readlines() 
+        myList = []
+        for line in read:
+            myList = line.split()
+            self.documents.append(myList)
         #print(self.documents)
-        #self.number_of_documents = len(self.documents) ##MIGHT NEED LEN - 1
-        docs = []
-        with open('data/test.txt') as f:
-            for line in f:
-                docs = line.split()
-                self.documents.append(docs)
+        self.number_of_documents = len(self.documents) ##MIGHT NEED LEN - 1
+        #docs = []
+        #with open('/data/test.txt') as f:
+        #   read = f.readlines()
+        #    for line in read:
+        #        docs = line.split()
+        #        self.documents.append(docs)
+        #print(self.documents)
+        #self.number_of_documents = len(self.documents)
 
     def build_vocabulary(self):
         """
@@ -69,25 +72,25 @@ class Corpus(object):
 
         Update self.vocabulary_size
         """
-        #discrete_set = set()
-        #for document in self.documents:
-        #    for word in document:
-        #        discrete_set.add(word)
-        #self.vocabulary = list(discrete_set)
-        #self.vocabulary_size = len(self.vocabulary)
+        discrete_set = set()
+        for document in self.documents:
+            for word in document:
+                discrete_set.add(word)
+        self.vocabulary = list(discrete_set)
+        self.vocabulary_size = len(self.vocabulary)
         # #############################
         # your code here
         # #############################
-        data = ""
-        x = ""
-        fin = []
-        with open ('data/test.txt', 'r') as file:
-            data = file.read().replace('\n', '')
-            x = re.sub('\d', '', data)
+        #data = ""
+        #x = ""
+        #fin = []
+        #with open ('data/test.txt', 'r') as file:
+        #    data = file.read().replace('\n', '')
+        #    x = re.sub('\d', '', data)
         
-        uniquewords = set(x.split())
-        fin = list(uniquewords)
-        self.vocabulary  = fin
+        #uniquewords = set(x.split())
+        #fin = list(uniquewords)
+        #self.vocabulary  = fin
 
 
 
@@ -174,13 +177,19 @@ class Corpus(object):
         # ############################
         # your code here
         # ############################
+        for d in range(len(self.topic_prob)):
+            for w in range(len(self.topic_prob[0][0])):
+                denominator = 0
+                for j in range(len(self.topic_prob[0])):
+                    denominator += self.document_topic_prob[d][j]*self.topic_word_prob[j][w]
 
-        for doc in range(self.number_of_documents):
-            for word in range(self.vocabulary_size):
-                prob = self.topic_word_prob[:,word] * self.document_topic_prob[doc,:]
-                prob = normalize(prob[np.newaxis,:])
-                self.topic_prob[d,:, w] = prob
-            self.topic_prob = normalize(self.topic_prob[doc,:,:])
+                for z in range(len(self.topic_prob[0])):
+                    numerator = self.document_topic_prob[d][z]*self.topic_word_prob[z][w]
+                    self.topic_prob[d][z][w] = numerator/ denominator
+
+
+
+        
 
         #pass    # REMOVE THIS
             
@@ -203,7 +212,7 @@ class Corpus(object):
                 totals = 0
                 for w in range(self.vocabulary_size):
                     totals = totals + self.term_doc_matrix[d][w] * self.topic_prob[d, z, w]
-                    print(self.topic_prob[d,z,w])
+                    #print(self.topic_prob[d,z,w])
                 self.document_topic_prob[d][z] = totals
         self.document_topic_prob = normalize(self.document_topic_prob)
 
@@ -215,13 +224,16 @@ class Corpus(object):
         Append the calculated log-likelihood to self.likelihoods
 
         """
-        for d_index in range(len(self.documents)):
-            for z in range(number_of_topics):
-                total = 0
-                for w_index in range(self.vocabulary_size):
-                    total += self.topic_prob[d_index, z, w_index] * self.topic_word_prob[z,w_index] * self.term_doc_matrix[d_index][w_index]
-                total += np.log(total)
-        return total
+        sum = 0
+        for d_index in range(self.number_of_documents):
+            next_sum = 0
+            for w_index in range(self.vocabulary_size):
+                log_prob = 0
+                for y in range(number_of_topics):
+                    log_prob += self.document_topic_prob[d_index][y]*self.topic_word_prob[y][w_index]
+                next_sum = self.term_doc_matrix[d_index][w_index]*math.log(log_prob)
+            sum += next_sum
+        self.likelihoods.append(sum)
 
     def plsa(self, number_of_topics, max_iter, epsilon):
 
@@ -250,15 +262,15 @@ class Corpus(object):
             self.maximization_step(number_of_topics)
             self.calculate_likelihood(number_of_topics)
             
-            current_likelihood = self.likelihoods[len(self.likelihoods) - 1]
-            print(current_likelihood)
-            if (abs(current_likelihood - self.likelihoods) <= epsilon):
-                break
+            #current_likelihood = self.likelihoods[len(self.likelihoods) - 1]
+            #print(current_likelihood)
+            #if (abs(current_likelihood - self.likelihoods) <= epsilon):
+            #    break
 
 
 
 def main():
-    documents_path = '/data/test.txt'
+    documents_path = 'data/test.txt'
     corpus = Corpus(documents_path)  # instantiate corpus
     corpus.build_corpus()
     corpus.build_vocabulary()
